@@ -1,0 +1,85 @@
+# PipocaGourmet — Oracle Cloud (DB + Auth + API)
+
+Front estático no **GitHub Pages**. Banco, autenticação e catálogo na **Oracle Cloud Free Tier** (`us-ashburn-1`).  
+Migração do Supabase **concluída** — o front usa apenas ORDS (`src/lib/ords.js` + `src/servicos/*`).
+
+## Provisionado
+
+| Recurso | Valor |
+|--------|--------|
+| ADB Always Free (ATP) | Display `PipocaGourmet`, DB name `PIPOCAG` |
+| ORDS | Schema REST `pipocag` |
+| Object Storage | Bucket privado `pipoca-gourmet` |
+
+Secrets: `.oci-secrets.env` e cópia em `~\.oci\pipoca-gourmet.env` (gitignored). Wallet em `oracle/wallet/` (gitignored).
+
+## Endpoints
+
+### Auth
+- `GET  {ORDS}/pipocag/auth/ping`
+- `POST {ORDS}/pipocag/auth/login` — headers `email`, `senha` → `{ token, expira_horas, usuario_id }`
+
+### Catálogo (público)
+- `GET {ORDS}/pipocag/api/sabores?ativos=1`
+- `GET {ORDS}/pipocag/api/kits?ativos=1`
+- `GET {ORDS}/pipocag/api/config`
+
+### Catálogo (admin — `Authorization: Bearer <token>`)
+Campos de escrita vão em **headers** (valores `encodeURIComponent` / UTF-8).
+- `POST/PUT/DELETE` em `/api/sabores` e `/api/sabores/:id`
+- `POST/PUT/DELETE` em `/api/kits` e `/api/kits/:id`
+- `PUT /api/config`
+
+## SQL versionado
+
+| Arquivo | Conteúdo |
+|---------|----------|
+| `oracle/sql/001_schema_pipocag.sql` | Usuário + tabelas |
+| `oracle/sql/002_ords_auth.sql` | Pacote auth + módulo ORDS |
+| `oracle/sql/003_ords_catalog.sql` | Pacote catálogo + seed + módulo `api` |
+| `oracle/sql/004_decode_headers.sql` | Decode UTF-8 dos headers |
+| `oracle/sql/005_cors_fix.sql` | Origins `*` (legado; ADB ainda rejeita Origin) |
+| `oracle/sql/006_cors_query.sql` | Diagnóstico `user_ords_modules` |
+| `oracle/sql/007_cors_origins.sql` | Origins explícitas (localhost + GitHub Pages) |
+
+Aplicar:
+
+```powershell
+powershell -File oracle/scripts/apply-sql.ps1 `
+  -SqlFile oracle/sql/003_ords_catalog.sql `
+  -SecretsFile .oci-secrets.env
+```
+
+## Front local (recomendado)
+
+```
+VITE_ORDS_BASE_URL=/ords
+ORDS_PROXY_TARGET=https://….adb.us-ashburn-1.oraclecloudapps.com
+```
+
+O Vite encaminha `/ords` e **remove** `Origin`/`Referer` — sem isso o ADB responde `ORDS-13002 Forbidden` no browser.
+
+## Produção (GitHub Pages)
+
+Secret do Actions: `VITE_ORDS_BASE_URL` = URL pública completa do ORDS (com `/ords`).
+
+### CORS / bloqueio
+
+Mesmo com `ORDS.SET_MODULE_ORIGINS_ALLOWED(..., '*')` ou lista explícita, requests **com** header `Origin` ao ORDS do ADB retornam **403 ORDS-13002**. Preflight `OPTIONS` também não devolve `Access-Control-Allow-*`.
+
+Consequência: o browser em `https://dccouto.github.io/...` **não** consegue chamar o ORDS diretamente de forma confiável (GETs públicos e, pior, admin com Bearer).
+
+**Mitigações:**
+1. Proxy same-origin (Cloudflare Worker / edge function) que encaminhe `/ords/*` sem repassar `Origin`, ou
+2. Usar o painel só via `npm run dev` (proxy Vite), ou
+3. Hospedar o estático atrás de um reverse proxy no mesmo host.
+
+## Teste rápido
+
+```powershell
+$ords = (Select-String -Path .\.oci-secrets.env -Pattern '^ADB_ORDS_URL=').Line.Split('=',2)[1].TrimEnd('/')
+curl.exe -s "$ords/pipocag/auth/ping"
+curl.exe -s "$ords/pipocag/api/sabores?ativos=1"
+# Com Origin (deve falhar no ADB atual):
+curl.exe -s -D - -o NUL "$ords/pipocag/api/config" -H "Origin: http://localhost:5173"
+```
