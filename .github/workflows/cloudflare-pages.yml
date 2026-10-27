@@ -1,0 +1,48 @@
+name: Publicar Cloudflare Pages (same-origin /ords)
+
+# Caminho recomendado: site + Function /ords no mesmo host.
+# Ative com a variável de repositório ENABLE_CLOUDFLARE_PAGES=true
+# Secrets: CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID
+# No projeto Pages (Settings → Environment variables):
+#   ORDS_PROXY_TARGET = https://XXXX-pipocag.adb.us-ashburn-1.oraclecloudapps.com
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+concurrency:
+  group: cloudflare-pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || vars.ENABLE_CLOUDFLARE_PAGES == 'true'
+    permissions:
+      contents: read
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Build (same-origin /ords)
+        env:
+          VITE_ORDS_BASE_URL: /ords
+          VITE_BASE: /
+        run: npm run build
+
+      - name: Publicar no Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist --project-name=pipoca-gourmet

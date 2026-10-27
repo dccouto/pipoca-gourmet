@@ -1,0 +1,18 @@
+# Proxy ORDS para produção (Worker standalone OU base do Pages).
+# Deploy Worker:
+#   npx wrangler secret put ORDS_PROXY_TARGET
+#   npx wrangler secret put CORS_ALLOW_ORIGINS   # opcional; ex: https://dccouto.github.io
+#   npx wrangler deploy
+#
+# Deploy Pages (site + Function /ords):
+#   npx wrangler pages deploy dist --project-name=pipoca-gourmet
+
+name = "pope-ords-proxy"
+main = "cloudflare/ords-proxy.js"
+compatibility_date = "2024-11-01"
+
+# Variáveis não-secretas (override via dashboard/secrets em prod)
+[vars]
+# CORS_ALLOW_ORIGINS = "https://dccouto.github.io,http://localhost:5173"
+
+# Pages Functions lêem o mesmo secret ORDS_PROXY_TARGET no projeto Pages.

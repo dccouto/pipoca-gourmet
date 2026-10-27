@@ -83,7 +83,7 @@ export async function montarAdmin(root) {
             preencha <code>VITE_ORDS_BASE_URL</code> (URL pública do ADB) e reinicie o Vite.
             Detalhes em <code>oracle/README-ORACLE.md</code>.
           </div>
-          <p><a href="/">← Voltar ao site</a></p>
+          <p><a href="${import.meta.env.BASE_URL}">← Voltar ao site</a></p>
         </div>
       `
       return
@@ -118,7 +118,7 @@ export async function montarAdmin(root) {
   function cabecalho(rota) {
     return `
       <header class="admin-topo">
-        <a class="admin-marca" href="/">🍿 <span>POPÊ</span> Admin</a>
+        <a class="admin-marca" href="${import.meta.env.BASE_URL}">🍿 <span>POPÊ</span> Admin</a>
         <nav class="admin-nav">
           <a href="#/sabores" class="${rota === 'sabores' ? 'ativo' : ''}">Sabores</a>
           <a href="#/kits" class="${rota === 'kits' ? 'ativo' : ''}">Kits</a>
@@ -146,7 +146,7 @@ export async function montarAdmin(root) {
           </div>
           <button class="btn btn-primario" type="submit" id="btn-entrar">Entrar</button>
         </form>
-        <p style="margin-top:1.25rem"><a href="/">← Voltar ao site</a></p>
+        <p style="margin-top:1.25rem"><a href="${import.meta.env.BASE_URL}">← Voltar ao site</a></p>
       </div>
     `
   }

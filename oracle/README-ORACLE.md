@@ -59,20 +59,24 @@ ORDS_PROXY_TARGET=https://….adb.us-ashburn-1.oraclecloudapps.com
 
 O Vite encaminha `/ords` e **remove** `Origin`/`Referer` — sem isso o ADB responde `ORDS-13002 Forbidden` no browser.
 
-## Produção (GitHub Pages)
+## Produção
 
-Secret do Actions: `VITE_ORDS_BASE_URL` = URL pública completa do ORDS (com `/ords`).
-
-### CORS / bloqueio
+### CORS / bloqueio (causa raiz)
 
 Mesmo com `ORDS.SET_MODULE_ORIGINS_ALLOWED(..., '*')` ou lista explícita, requests **com** header `Origin` ao ORDS do ADB retornam **403 ORDS-13002**. Preflight `OPTIONS` também não devolve `Access-Control-Allow-*`.
 
-Consequência: o browser em `https://dccouto.github.io/...` **não** consegue chamar o ORDS diretamente de forma confiável (GETs públicos e, pior, admin com Bearer).
+O browser em GitHub Pages **não** pode chamar o ADB diretamente.
 
-**Mitigações:**
-1. Proxy same-origin (Cloudflare Worker / edge function) que encaminhe `/ords/*` sem repassar `Origin`, ou
-2. Usar o painel só via `npm run dev` (proxy Vite), ou
-3. Hospedar o estático atrás de um reverse proxy no mesmo host.
+### Mitigação (no repo)
+
+Proxy Cloudflare que remove `Origin`/`Referer` — ver [`cloudflare/README.md`](../cloudflare/README.md).
+
+| Opção | `VITE_ORDS_BASE_URL` | Deploy |
+|-------|----------------------|--------|
+| Worker + GitHub Pages | `https://pope-ords-proxy.…workers.dev/ords` | Secret Actions + `wrangler deploy` |
+| Cloudflare Pages | `/ords` | Function `functions/ords/` + `ORDS_PROXY_TARGET` |
+
+Local continua com proxy Vite (`ORDS_PROXY_TARGET` + `VITE_ORDS_BASE_URL=/ords`).
 
 ## Teste rápido
 

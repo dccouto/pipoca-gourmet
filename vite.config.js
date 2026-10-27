@@ -3,32 +3,33 @@ import { resolve } from 'node:path'
 
 const raiz = import.meta.dirname
 
+function ordsProxy(proxyTarget) {
+  return {
+    '/ords': {
+      target: proxyTarget,
+      changeOrigin: true,
+      secure: true,
+      // ORDS ADB rejeita Origin (ORDS-13002) mesmo com origins '*'.
+      configure: (proxy) => {
+        proxy.on('proxyReq', (proxyReq) => {
+          proxyReq.removeHeader('origin')
+          proxyReq.removeHeader('referer')
+        })
+      },
+    },
+  }
+}
+
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, raiz, '')
   const proxyTarget = (env.ORDS_PROXY_TARGET || '').replace(/\/+$/, '')
+  const proxy = proxyTarget ? ordsProxy(proxyTarget) : undefined
 
   return {
     base: process.env.VITE_BASE || '/',
     appType: 'mpa',
-    server: proxyTarget
-      ? {
-          proxy: {
-            '/ords': {
-              target: proxyTarget,
-              changeOrigin: true,
-              secure: true,
-              // ORDS ADB rejeita Origin (ORDS-13002) mesmo com origins '*'.
-              // No proxy local removemos Origin/Referer para o fetch same-origin funcionar.
-              configure: (proxy) => {
-                proxy.on('proxyReq', (proxyReq) => {
-                  proxyReq.removeHeader('origin')
-                  proxyReq.removeHeader('referer')
-                })
-              },
-            },
-          },
-        }
-      : undefined,
+    server: proxy ? { proxy } : undefined,
+    preview: proxy ? { proxy } : undefined,
     build: {
       rollupOptions: {
         input: {

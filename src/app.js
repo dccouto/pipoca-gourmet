@@ -208,7 +208,7 @@ export async function montarApp(root) {
     <footer class="rodape">
       <p class="rodape-marca">${nomeMarca}</p>
       <p>Pipoca gourmet artesanal · Feita com alegria</p>
-      <p class="rodape-aviso"><a href="/admin/">Área administrativa</a></p>
+      <p class="rodape-aviso"><a href="${import.meta.env.BASE_URL}admin/">Área administrativa</a></p>
     </footer>
   `
 

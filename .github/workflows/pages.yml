@@ -30,11 +30,21 @@ jobs:
       - name: Instalar dependências
         run: npm ci
 
+      # Produção em GitHub Pages NÃO tem proxy /ords.
+      # Defina o secret VITE_ORDS_BASE_URL como a URL do Worker Cloudflare
+      # (ex.: https://pope-ords-proxy.<conta>.workers.dev/ords), NÃO a URL crua do ADB
+      # (ADB rejeita Origin → ORDS-13002). Ver README / cloudflare/.
       - name: Gerar o site estático
         env:
           VITE_ORDS_BASE_URL: ${{ secrets.VITE_ORDS_BASE_URL }}
           VITE_BASE: /${{ github.event.repository.name }}/
-        run: npm run build
+        run: |
+          if [ -z "$VITE_ORDS_BASE_URL" ]; then
+            echo "::warning::Secret VITE_ORDS_BASE_URL vazio — vitrine usará fallback local."
+          else
+            echo "VITE_ORDS_BASE_URL definido (comprimento ${#VITE_ORDS_BASE_URL})."
+          fi
+          npm run build
 
       - name: Configurar Pages
         uses: actions/configure-pages@v5
