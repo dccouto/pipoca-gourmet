@@ -5,7 +5,7 @@ import {
   mensagemErro,
   reaisParaCentavos,
 } from '../lib/erros.js'
-import { carregarSessao, entrar, sair } from '../servicos/auth.js'
+import { alterarSenha, carregarSessao, entrar, sair } from '../servicos/auth.js'
 import { excluirSabor, listarSabores, salvarSabor } from '../servicos/sabores.js'
 import { excluirKit, listarKits, salvarKit } from '../servicos/kits.js'
 import { getConfiguracao, salvarConfiguracao } from '../servicos/configuracao.js'
@@ -246,7 +246,7 @@ export async function montarAdmin(root) {
       <div class="painel-titulo">
         <div>
           <h1>Configurações</h1>
-          <p>WhatsApp e textos da marca no site.</p>
+          <p>WhatsApp, textos da marca e senha do admin.</p>
         </div>
       </div>
       <form class="card form-grid" id="form-config">
@@ -264,6 +264,27 @@ export async function montarAdmin(root) {
         </div>
         <div class="form-acoes">
           <button class="btn btn-primario" type="submit">Salvar</button>
+        </div>
+      </form>
+      <form class="card form-grid" id="form-senha" style="margin-top:1.25rem">
+        <h2 style="margin:0;font-family:var(--fonte-marca);font-size:1.15rem">Alterar senha</h2>
+        <p style="margin:0;color:var(--apagado);font-size:0.95rem">
+          Outras sessões do mesmo admin serão encerradas. Esta permanece ativa.
+        </p>
+        <div>
+          <label for="senha_atual">Senha atual</label>
+          <input id="senha_atual" name="senha_atual" type="password" autocomplete="current-password" required />
+        </div>
+        <div>
+          <label for="senha_nova">Nova senha</label>
+          <input id="senha_nova" name="senha_nova" type="password" autocomplete="new-password" minlength="8" required />
+        </div>
+        <div>
+          <label for="senha_confirma">Confirmar nova senha</label>
+          <input id="senha_confirma" name="senha_confirma" type="password" autocomplete="new-password" minlength="8" required />
+        </div>
+        <div class="form-acoes">
+          <button class="btn btn-primario" type="submit" id="btn-alterar-senha">Alterar senha</button>
         </div>
       </form>
     `
@@ -501,6 +522,41 @@ export async function montarAdmin(root) {
           })
           estado.ok = 'Configurações salvas.'
           estado.erro = ''
+          render()
+        } catch (erro) {
+          estado.erro = mensagemErro(erro)
+          render()
+        }
+      })
+
+      root.querySelector('#form-senha')?.addEventListener('submit', async (evento) => {
+        evento.preventDefault()
+        const form = evento.currentTarget
+        const atual = form.senha_atual.value
+        const nova = form.senha_nova.value
+        const confirma = form.senha_confirma.value
+        estado.erro = ''
+        estado.ok = ''
+        if (nova !== confirma) {
+          estado.erro = 'A confirmação não confere com a nova senha.'
+          render()
+          return
+        }
+        if (nova.length < 8) {
+          estado.erro = 'A nova senha deve ter ao menos 8 caracteres.'
+          render()
+          return
+        }
+        const botao = root.querySelector('#btn-alterar-senha')
+        if (botao) {
+          botao.disabled = true
+          botao.textContent = 'Alterando…'
+        }
+        try {
+          await alterarSenha(atual, nova)
+          estado.ok = 'Senha alterada com sucesso.'
+          estado.erro = ''
+          form.reset()
           render()
         } catch (erro) {
           estado.erro = mensagemErro(erro)

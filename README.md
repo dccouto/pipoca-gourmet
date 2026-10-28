@@ -33,7 +33,7 @@ Use `ADMIN_APP_EMAIL` e `ADMIN_APP_PASSWORD` de `.oci-secrets.env` (nunca commit
 | Recurso | Valor |
 |--------|--------|
 | ADB | `PipocaGourmet` / DB `PIPOCAG` |
-| Auth | `POST /ords/pipocag/auth/login` (headers `email`, `senha`) |
+| Auth | `POST /ords/pipocag/auth/login` · `POST /ords/pipocag/auth/senha` |
 | API | `/ords/pipocag/api/sabores`, `/kits`, `/config` |
 | Secrets | `.oci-secrets.env` (gitignored) |
 
@@ -66,7 +66,7 @@ Passo a passo: [`cloudflare/README.md`](cloudflare/README.md).
 ## Painel
 
 - Sabores e kits (CRUD, ativo/inativo)
-- Configurações (WhatsApp, marca, slogan)
+- Configurações (WhatsApp, marca, slogan, alterar senha)
 
 ## Build
 

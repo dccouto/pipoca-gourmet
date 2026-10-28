@@ -18,6 +18,7 @@ Secrets: `.oci-secrets.env` e cópia em `~\.oci\pipoca-gourmet.env` (gitignored)
 ### Auth
 - `GET  {ORDS}/pipocag/auth/ping`
 - `POST {ORDS}/pipocag/auth/login` — headers `email`, `senha` → `{ token, expira_horas, usuario_id }`
+- `POST {ORDS}/pipocag/auth/senha` — `Authorization: Bearer` + headers `senha_atual`, `senha_nova` (percent-encoded) → `{ ok: true }`
 
 ### Catálogo (público)
 - `GET {ORDS}/pipocag/api/sabores?ativos=1`
@@ -41,6 +42,7 @@ Campos de escrita vão em **headers** (valores `encodeURIComponent` / UTF-8).
 | `oracle/sql/005_cors_fix.sql` | Origins `*` (legado; ADB ainda rejeita Origin) |
 | `oracle/sql/006_cors_query.sql` | Diagnóstico `user_ords_modules` |
 | `oracle/sql/007_cors_origins.sql` | Origins explícitas (localhost + GitHub Pages) |
+| `oracle/sql/008_auth_senha.sql` | `auth_util.alterar_senha_json` + `POST /auth/senha` |
 
 Aplicar:
 

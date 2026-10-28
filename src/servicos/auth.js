@@ -1,4 +1,4 @@
-import { getToken, ordsConfigurado, ordsFetch, setToken } from '../lib/ords.js'
+import { getToken, headersCatalogo, ordsConfigurado, ordsFetch, setToken } from '../lib/ords.js'
 import { mensagemErro } from '../lib/erros.js'
 
 export function backendConfigurado() {
@@ -23,6 +23,23 @@ export async function entrar(email, senha) {
     if (!dados?.token) throw new Error(dados?.erro || 'Login sem token')
     setToken(dados.token)
     return { access_token: dados.token, usuario_id: dados.usuario_id }
+  } catch (erro) {
+    throw new Error(mensagemErro(erro))
+  }
+}
+
+export async function alterarSenha(senhaAtual, senhaNova) {
+  try {
+    const dados = await ordsFetch('/pipocag/auth/senha', {
+      method: 'POST',
+      auth: true,
+      headers: headersCatalogo({
+        senha_atual: senhaAtual,
+        senha_nova: senhaNova,
+      }),
+    })
+    if (!dados?.ok) throw new Error(dados?.erro || 'Falha ao alterar senha')
+    return dados
   } catch (erro) {
     throw new Error(mensagemErro(erro))
   }
